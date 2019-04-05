@@ -64,8 +64,8 @@ type CoinAPI_Timeseries = {|
 |};
 
 function symbolToPairExchange(symbol: string): ?PairExchange {
-  const [exchange, type, from, to] = symbol.split("_");
-  if (type !== "SPOT") return;
+  const [exchange, type, from, to, suffix] = symbol.split("_");
+  if (type !== "SPOT" || suffix) return; // to avodi duplicates (e.g. we can have HITBTC_BTC_ETH and HITBTC_BTC_ETH_[SOME_SUFFIX]
   return pairExchange(exchange, from, to);
 }
 

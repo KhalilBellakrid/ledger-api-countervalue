@@ -11,6 +11,26 @@
 ```
 yarn
 ```
+### Install MongoDB on MacOS
+Tap package:
+```
+brew tap mongodb/brew
+```
+then install it:
+```
+brew install mongodb-community@4.0
+```
+### Setup MongoDB
+First, create folder which will contain data:
+```
+mkdir data
+```
+Second, start launching the `mongod`:
+
+```
+mongod --dbpath ./data
+```
+By default it will be served on `localhost` on `27017` port, if you want to specify different port, you can use `--port` to specify it.
 
 ## Building for dev
 

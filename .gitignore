@@ -1,5 +1,7 @@
 /data
-
+countervalues*.sh
+logfile
+postgres*/
 node_modules/
 flow-typed/
 lib/

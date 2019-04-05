@@ -75,7 +75,7 @@ export const pairExchange = (
   exchange: string,
   from: string,
   to: string
-): PairExchange => ({ id: `${exchange}_${from}_${to}`, exchange, from, to });
+): PairExchange => ({ id: `${exchange}_${from}_${to}`.toUpperCase(), exchange, from, to }); // all fields are upper case, so let's be sure it's always the case
 
 export const pairExchangeFromId = (id: string): PairExchange => {
   const parts = id.split("_");
