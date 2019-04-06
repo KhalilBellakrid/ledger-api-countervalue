@@ -34,6 +34,8 @@ mongod --dbpath ./data
 ```
 By default it will be served on `localhost` on `27017` port, if you want to specify different port, you can use `--port` to specify it.
 
+MongoDB backend is the default one right now.
+
 ## Using PostgreSQL
 ### Install PostgreSQL on MacOS
 Install package:
@@ -45,6 +47,10 @@ brew install postgres
 initdb -D <db_name>
 pg_ctl start -D <db_name> -l <log_file_name> -o "-i -h <host> -p <port>"
 createdb -h <host> -p <port> <db_name>
+```
+To use a PostgreSQL backend, you will have to set the environment variable `DATABASE`:
+```
+export DATABASE=postgres
 ```
 ## Building for dev
 
