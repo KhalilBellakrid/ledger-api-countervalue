@@ -112,7 +112,7 @@ async function updateLiveRates(all) {
       latestDate: `${new Date().toISOString()}`
     };
   });
-  const query = pgp.helpers.update(values, cs) + ` WHERE v.id = t.id`;
+  const query = pgp.helpers.update(values, cs) + ` WHERE UPPER(v.id) = t.id`;
   await client.any(query).catch(err => {
     throw new Error(`Failed to update Live rates: ${err}`);
   });
@@ -123,7 +123,7 @@ async function updateHisto(id, granurity, histo) {
   const client = await getDB();
   await client
     .any(
-      `UPDATE "pairExchanges" SET histo_${granurity} = $1 WHERE id = '${id}'`,
+      `UPDATE "pairExchanges" SET histo_${granurity} = $1 WHERE id = UPPER('${id}')`,
       [histo]
     )
     .catch(err => {
@@ -142,7 +142,7 @@ async function updateExchanges(exchanges) {
       exchange: item.name
     };
   });
-  const query = pgp.helpers.update(values, cs) + ` WHERE v.id = t.id`;
+  const query = pgp.helpers.update(values, cs) + ` WHERE UPPER(v.id) = t.id`;
   await client.any(query).catch(err => {
     throw new Error(`Failed to update exchanges: ${err}`);
   });
@@ -187,9 +187,9 @@ async function updatePairExchangeStats(id, stats) {
 async function updateMarketCapCoins(day, coins) {
   const client = await getDB();
   await client
-    .any(`UPDATE marketcap_coins SET coins = $2 WHERE day = '${day}'`, [
-      `${day}`,
-      coins
+    .any(`UPDATE marketcap_coins SET coins = $1 WHERE day = $2`, [
+      coins,
+      `${day}`
     ])
     .catch(err => {
       throw new Error(`Failed to update market cap coins: ${err}`);
