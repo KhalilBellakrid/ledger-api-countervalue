@@ -1,3 +1,5 @@
+// @flow
+
 import type { Database } from "../types";
 import { promisify, formatTime } from "../utils";
 

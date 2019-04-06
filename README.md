@@ -11,6 +11,8 @@
 ```
 yarn
 ```
+## Using MongoDB
+
 ### Install MongoDB on MacOS
 Tap package:
 ```
@@ -32,6 +34,18 @@ mongod --dbpath ./data
 ```
 By default it will be served on `localhost` on `27017` port, if you want to specify different port, you can use `--port` to specify it.
 
+## Using PostgreSQL
+### Install PostgreSQL on MacOS
+Install package:
+```
+brew install postgres
+```
+### Setup PostgreSQL
+```
+initdb -D <db_name>
+pg_ctl start -D <db_name> -l <log_file_name> -o "-i -h <host> -p <port>"
+createdb -h <host> -p <port> <db_name>
+```
 ## Building for dev
 
 ```
