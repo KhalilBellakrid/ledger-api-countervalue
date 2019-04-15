@@ -44,14 +44,21 @@ const init = async () => {
     day TIMESTAMP,
     coins VARCHAR(25)[]
   )`;
-  await client.query(queryString).catch(err => { throw new Error(`Failed to create marketcap_coins table: ${err}`); });;
+  await client.query(queryString).catch(err => { throw new Error(`Failed to create marketcap_coins table: ${err}`); });
 
   queryString = `CREATE TABLE IF NOT EXISTS meta (
     id VARCHAR(50) PRIMARY KEY,
     "lastMarketCapSync" TIMESTAMPTZ,
     "lastLiveRatesSync" TIMESTAMPTZ
   )`;
-  await client.query(queryString).catch(err => { throw new Error(`Failed to create meta table: ${err}`); });;
+  await client.query(queryString).catch(err => { throw new Error(`Failed to create meta table: ${err}`); });
+
+  queryString = `CREATE TABLE IF NOT EXISTS exchanges (
+    id VARCHAR(50) PRIMARY KEY,
+    name VARCHAR(50),
+    website VARCHAR(100)
+  )`;
+  await client.query(queryString).catch(err => { throw new Error(`Failed to create exchanges table: ${err}`); });
 };
 
 const metaId = "meta_1";
@@ -83,7 +90,7 @@ async function setMeta(meta) {
 async function getMeta() {
   const client = await getDB();
   const meta = await client
-    .query(`SELECT * FROM meta WHERE metaId = ${metaId}`)
+    .query(`SELECT * FROM meta WHERE metaId = $1`,[`${metaId}`])
     .catch(err => {
       throw new Error(`Failed to get DB meta: ${err}`);
     });
@@ -124,8 +131,8 @@ async function updateHisto(id, granurity, histo) {
   const client = await getDB();
   await client
     .any(
-      `UPDATE "pairExchanges" SET histo_${granurity} = $1 WHERE id = UPPER('${id}')`,
-      [histo]
+      `UPDATE "pairExchanges" SET histo_${granurity} = $1 WHERE id = UPPER($2)`,
+      [histo, `${id}`]
     )
     .catch(err => {
       throw new Error(`Failed to update ${id} histo: ${err}`);
@@ -179,8 +186,8 @@ async function updatePairExchangeStats(id, stats) {
   const cs = new pgp.helpers.ColumnSet(Object.keys(stats), {
     table: "pairExchanges"
   });
-  const query = pgp.helpers.update(stats, cs) + ` WHERE id = UPPER('${id}')`;
-  await client.any(query).catch(err => {
+  const query = pgp.helpers.update(stats, cs) + ` WHERE id = UPPER($1)`;
+  await client.any(query, [`${id}`]).catch(err => {
     throw new Error(`Failed to update exchange ${id} stats: ${err}`);
   });
 }
@@ -198,9 +205,13 @@ async function updateMarketCapCoins(day, coins) {
   await setMeta({ lastMarketCapSync: new Date() });
 }
 
-// This seems not to be used
 async function queryExchanges() {
-  throw new Error("queryExchanges Not Implemented");
+  const client = await getDB();
+  const doc = await client
+    .query(`SELECT * FROM exchanges`)
+    .catch(err => {
+      new Error("Failed to retrieve all exchanges");
+    });
 }
 
 const queryPairExchangesSort = coll =>
@@ -253,7 +264,7 @@ const queryPairExchangeById = async (id, projection) => {
   const client = await getDB();
   // TODO: why do we use projection here ?
   const doc = await client
-    .query(`SELECT * FROM "pairExchanges" WHERE id = UPPER('${id}')`)
+    .query(`SELECT * FROM "pairExchanges" WHERE id = UPPER($1)`, [`${id}`])
     .catch(err => {
       new Error(`Failed to retrieve exchange ${id}: ${err}`);
     });
@@ -266,7 +277,7 @@ const queryPairExchangeById = async (id, projection) => {
 const queryMarketCapCoinsForDay = async day => {
   const client = await getDB();
   const coins = await client
-    .query(`SELECT coins from marketcap_coins WHERE day = '${day}'`)
+    .query(`SELECT coins from marketcap_coins WHERE day = $1`, [`${day}`])
     .catch(err => {
       throw new Error(`Failed to query Marketcap coins: ${err}`);
     });
