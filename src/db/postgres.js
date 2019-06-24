@@ -38,27 +38,35 @@ const init = async () => {
       histo_daily JSONB,
       histo_hourly JSONB
       )`;
-  await client.query(queryString).catch(err => { throw new Error(`Failed to create pairExchanges table: ${err}`); });
+  await client.query(queryString).catch(err => {
+    throw new Error(`Failed to create pairExchanges table: ${err}`);
+  });
 
   queryString = `CREATE TABLE IF NOT EXISTS marketcap_coins (
     day TIMESTAMP,
     coins VARCHAR(25)[]
   )`;
-  await client.query(queryString).catch(err => { throw new Error(`Failed to create marketcap_coins table: ${err}`); });
+  await client.query(queryString).catch(err => {
+    throw new Error(`Failed to create marketcap_coins table: ${err}`);
+  });
 
   queryString = `CREATE TABLE IF NOT EXISTS meta (
     id VARCHAR(50) PRIMARY KEY,
     "lastMarketCapSync" TIMESTAMPTZ,
     "lastLiveRatesSync" TIMESTAMPTZ
   )`;
-  await client.query(queryString).catch(err => { throw new Error(`Failed to create meta table: ${err}`); });
+  await client.query(queryString).catch(err => {
+    throw new Error(`Failed to create meta table: ${err}`);
+  });
 
   queryString = `CREATE TABLE IF NOT EXISTS exchanges (
     id VARCHAR(50) PRIMARY KEY,
     name VARCHAR(50),
     website VARCHAR(100)
   )`;
-  await client.query(queryString).catch(err => { throw new Error(`Failed to create exchanges table: ${err}`); });
+  await client.query(queryString).catch(err => {
+    throw new Error(`Failed to create exchanges table: ${err}`);
+  });
 };
 
 const metaId = "meta_1";
@@ -84,13 +92,15 @@ async function setMeta(meta) {
   ]);
   const query =
     pgp.helpers.insert([value], cs) + " ON CONFLICT(id) DO " + update;
-  await client.any(query).catch(err => { throw new Error(`Failed to setMeta: ${err}`); });
+  await client.any(query).catch(err => {
+    throw new Error(`Failed to setMeta: ${err}`);
+  });
 }
 
 async function getMeta() {
   const client = await getDB();
   const meta = await client
-    .query(`SELECT * FROM meta WHERE metaId = $1`,[`${metaId}`])
+    .query(`SELECT * FROM meta WHERE metaId = $1`, [`${metaId}`])
     .catch(err => {
       throw new Error(`Failed to get DB meta: ${err}`);
     });
@@ -103,7 +113,7 @@ async function getMeta() {
 
 async function statusDB() {
   const client = await getDB();
-  const count = await client.query("SELECT COUNT(*) FROM \"pairExchanges\"");
+  const count = await client.query('SELECT COUNT(*) FROM "pairExchanges"');
   if (count === 0) throw new Error("database is empty");
 }
 
@@ -127,16 +137,27 @@ async function updateLiveRates(all) {
   await setMeta({ lastLiveRatesSync: new Date() });
 }
 
-async function updateHisto(id, granurity, histo) {
+async function updateHisto(id, granularity, histo, { setLatest } = {}) {
   const client = await getDB();
-  await client
-    .any(
-      `UPDATE "pairExchanges" SET histo_${granurity} = $1 WHERE id = UPPER($2)`,
-      [histo, `${id}`]
-    )
-    .catch(err => {
-      throw new Error(`Failed to update ${id} histo: ${err}`);
-    });
+  if (setLatest) {
+    await client
+      .any(
+        `UPDATE "pairExchanges" SET histo_${granularity} = $1, latest = $2, "latestDate" = $3 WHERE id = UPPER($4)`,
+        [histo, setLatest.latest, setLatest.latestDate, `${id}`]
+      )
+      .catch(err => {
+        throw new Error(`Failed to update ${id} histo: ${err}`);
+      });
+  } else {
+    await client
+      .any(
+        `UPDATE "pairExchanges" SET histo_${granularity} = $1 WHERE id = UPPER($2)`,
+        [histo, `${id}`]
+      )
+      .catch(err => {
+        throw new Error(`Failed to update ${id} histo: ${err}`);
+      });
+  }
 }
 
 async function updateExchanges(exchanges) {
@@ -207,11 +228,9 @@ async function updateMarketCapCoins(day, coins) {
 
 async function queryExchanges() {
   const client = await getDB();
-  const doc = await client
-    .query(`SELECT * FROM exchanges`)
-    .catch(err => {
-      new Error("Failed to retrieve all exchanges");
-    });
+  const doc = await client.query(`SELECT * FROM exchanges`).catch(err => {
+    new Error("Failed to retrieve all exchanges");
+  });
 }
 
 const queryPairExchangesSort = coll =>
@@ -226,7 +245,7 @@ async function queryPairExchangesByPairs(pairs) {
   const client = await getDB();
   const finalPairs = pairs.map(p => `${p.from + "_" + p.to}`.toUpperCase());
   const docs = await client
-    .query("SELECT * FROM \"pairExchanges\" WHERE id in ($1)", [finalPairs])
+    .query('SELECT * FROM "pairExchanges" WHERE id in ($1)', [finalPairs])
     .catch(err => {
       throw new Error(`Failed to query exvhanges by pairs: ${err}`);
     });
@@ -237,7 +256,7 @@ async function queryPairExchangesByPairs(pairs) {
 async function queryPairExchangesByPair(pair, opts = {}) {
   const client = await getDB();
   const { from, to } = pair;
-  const query = "SELECT * FROM \"pairExchanges\" WHERE from = $1 AND to = $2";
+  const query = 'SELECT * FROM "pairExchanges" WHERE from = $1 AND to = $2';
   const docs = await (opts.filterWithHistory
     ? client.query(`${query} AND hasHistoryFor30LastDays = TRUE`, [from, to])
     : client.query(`${query}`, [from, to])
@@ -253,7 +272,7 @@ async function queryPairExchangesByPair(pair, opts = {}) {
 async function queryPairExchangeIds() {
   const client = await getDB();
   const idArray = await client
-    .query("SELECT id FROM \"pairExchanges\"")
+    .query('SELECT id FROM "pairExchanges"')
     .catch(err => {
       throw new Error(`Failed to retrieve exchanges: ${err}`);
     });
